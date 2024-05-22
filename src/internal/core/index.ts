@@ -167,13 +167,13 @@ export function seq<Parsers extends Parser<unknown>[]>(...parsers: Parsers): Par
 	});
 }
 
-export function alt(parsers: Parser<any>[]): Parser<any> {
-	return new Parser((input, index, state) => {
-		let result;
+export function alt<Parsers extends Parser<unknown>[]>(parsers: Parsers): Parser<ParsedType<Parsers[number]>> {
+	return new Parser<ParsedType<Parsers[number]>>((input, index, state): Result<ParsedType<Parsers[number]>> => {
 		for (let i = 0; i < parsers.length; i++) {
-			result = parsers[i].handler(input, index, state);
+			const parser: Parsers[number] = parsers[i];
+			const result = parser.handler(input, index, state);
 			if (result.success) {
-				return result;
+				return result as Result<ParsedType<Parsers[number]>>;
 			}
 		}
 		return failure();

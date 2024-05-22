@@ -95,7 +95,7 @@ interface TypeTable {
 	emojiCode: NodeType<'emojiCode'>,
 	link: NodeType<'link'>,
 	url: NodeType<'url'> | string,
-	urlAlt: NodeType<'url'> | string,
+	urlAlt: NodeType<'url'>,
 	search: NodeType<'search'>,
 	text: string,
 }
@@ -337,7 +337,7 @@ export const language = P.createLanguage<TypeTable>({
 			mark,
 		).map(result => {
 			if (typeof result === 'string') return result;
-			return M.BOLD(mergeText(result[1] as (M.MfmInline | string)[]));
+			return M.BOLD(mergeText(result[1]));
 		});
 	},
 
@@ -350,7 +350,7 @@ export const language = P.createLanguage<TypeTable>({
 			close,
 		).map(result => {
 			if (typeof result === 'string') return result;
-			return M.BOLD(mergeText(result[1] as (M.MfmInline | string)[]));
+			return M.BOLD(mergeText(result[1]));
 		});
 	},
 
@@ -360,7 +360,7 @@ export const language = P.createLanguage<TypeTable>({
 			mark,
 			P.alt([alphaAndNum, space]).many(1),
 			mark,
-		).map(result => M.BOLD(mergeText(result[1] as string[])));
+		).map(result => M.BOLD(mergeText(result[1])));
 	},
 
 	smallTag: r => {
@@ -406,7 +406,7 @@ export const language = P.createLanguage<TypeTable>({
 			if (/[a-z0-9]$/i.test(beforeStr)) {
 				return P.failure();
 			}
-			return P.success(result.index, M.ITALIC(mergeText(result.value[1] as string[])));
+			return P.success(result.index, M.ITALIC(mergeText(result.value[1])));
 		});
 	},
 
@@ -427,7 +427,7 @@ export const language = P.createLanguage<TypeTable>({
 			if (/[a-z0-9]$/i.test(beforeStr)) {
 				return P.failure();
 			}
-			return P.success(result.index, M.ITALIC(mergeText(result.value[1] as string[])));
+			return P.success(result.index, M.ITALIC(mergeText(result.value[1])));
 		});
 	},
 
@@ -452,7 +452,7 @@ export const language = P.createLanguage<TypeTable>({
 			mark,
 		).map(result => {
 			if (typeof result === 'string') return result;
-			return M.STRIKE(mergeText(result[1] as (M.MfmInline | string)[]));
+			return M.STRIKE(mergeText(result[1]));
 		});
 	},
 
