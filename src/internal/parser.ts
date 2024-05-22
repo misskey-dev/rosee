@@ -66,11 +66,11 @@ function nest<T>(parser: P.Parser<T>, fallback?: P.Parser<string>): P.Parser<T |
 }
 
 interface TypeTable {
-	fullParser: MfmNode[],
-	simpleParser: MfmNode[],
-	full: MfmNode,
-	simple: MfmNode,
-	inline: MfmInline,
+	fullParser: (MfmNode | string)[],
+	simpleParser: (MfmNode | string)[],
+	full: MfmNode | string,
+	simple: MfmNode | string,
+	inline: MfmInline | string,
 	quote: NodeType<'quote'>,
 	codeBlock: NodeType<'blockCode'>,
 	mathBlock: NodeType<'mathBlock'>,
