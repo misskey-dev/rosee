@@ -16,9 +16,15 @@ const space = P.regexp(/[\u0020\u3000\t]/);
 const alphaAndNum = P.regexp(/[a-z0-9]/i);
 const newLine = P.alt([P.crlf, P.cr, P.lf]);
 
-function seqOrText(parsers: P.Parser<any>[]): P.Parser<any[] | string> {
-	return new P.Parser<any[] | string>((input, index, state) => {
-		const accum: any[] = [];
+type SeqParseResult<T extends unknown[]> =
+	T extends [P.Parser<infer A>, ...infer R] ? [A, ...SeqParseResult<R>]
+		: T extends [] ? []
+			: unknown[];
+
+function seqOrText<Parsers extends P.Parser<unknown>[]>(...parsers: Parsers): P.Parser<SeqParseResult<Parsers> | string> {
+	return new P.Parser<SeqParseResult<Parsers> | string>((input, index, state) => {
+		// TODO: typesafe implementation
+		const accum: unknown[] = [];
 		let latestIndex = index;
 		for (let i = 0 ; i < parsers.length; i++) {
 			const result = parsers[i].handler(input, latestIndex, state);
@@ -32,7 +38,7 @@ function seqOrText(parsers: P.Parser<any>[]): P.Parser<any[] | string> {
 			accum.push(result.value);
 			latestIndex = result.index;
 		}
-		return P.success(latestIndex, accum);
+		return P.success(latestIndex, accum as SeqParseResult<Parsers>);
 	});
 }
 
@@ -281,11 +287,11 @@ export const language = P.createLanguage({
 
 	big: r => {
 		const mark = P.str('***');
-		return seqOrText([
+		return seqOrText(
 			mark,
 			P.seq([P.notMatch(mark), nest(r.inline)], 1).many(1),
 			mark,
-		]).map(result => {
+		).map(result => {
 			if (typeof result === 'string') return result;
 			return M.FN('tada', {}, mergeText(result[1]));
 		});
@@ -293,11 +299,11 @@ export const language = P.createLanguage({
 
 	boldAsta: r => {
 		const mark = P.str('**');
-		return seqOrText([
+		return seqOrText(
 			mark,
 			P.seq([P.notMatch(mark), nest(r.inline)], 1).many(1),
 			mark,
-		]).map(result => {
+		).map(result => {
 			if (typeof result === 'string') return result;
 			return M.BOLD(mergeText(result[1] as (M.MfmInline | string)[]));
 		});
@@ -306,11 +312,11 @@ export const language = P.createLanguage({
 	boldTag: r => {
 		const open = P.str('<b>');
 		const close = P.str('</b>');
-		return seqOrText([
+		return seqOrText(
 			open,
 			P.seq([P.notMatch(close), nest(r.inline)], 1).many(1),
 			close,
-		]).map(result => {
+		).map(result => {
 			if (typeof result === 'string') return result;
 			return M.BOLD(mergeText(result[1] as (M.MfmInline | string)[]));
 		});
@@ -328,11 +334,11 @@ export const language = P.createLanguage({
 	smallTag: r => {
 		const open = P.str('<small>');
 		const close = P.str('</small>');
-		return seqOrText([
+		return seqOrText(
 			open,
 			P.seq([P.notMatch(close), nest(r.inline)], 1).many(1),
 			close,
-		]).map(result => {
+		).map(result => {
 			if (typeof result === 'string') return result;
 			return M.SMALL(mergeText(result[1] as (M.MfmInline | string)[]));
 		});
@@ -341,11 +347,11 @@ export const language = P.createLanguage({
 	italicTag: r => {
 		const open = P.str('<i>');
 		const close = P.str('</i>');
-		return seqOrText([
+		return seqOrText(
 			open,
 			P.seq([P.notMatch(close), nest(r.inline)], 1).many(1),
 			close,
-		]).map(result => {
+		).map(result => {
 			if (typeof result === 'string') return result;
 			return M.ITALIC(mergeText(result[1] as (M.MfmInline | string)[]));
 		});
@@ -396,11 +402,11 @@ export const language = P.createLanguage({
 	strikeTag: r => {
 		const open = P.str('<s>');
 		const close = P.str('</s>');
-		return seqOrText([
+		return seqOrText(
 			open,
 			P.seq([P.notMatch(close), nest(r.inline)], 1).many(1),
 			close,
-		]).map(result => {
+		).map(result => {
 			if (typeof result === 'string') return result;
 			return M.STRIKE(mergeText(result[1] as (M.MfmInline | string)[]));
 		});
@@ -408,11 +414,11 @@ export const language = P.createLanguage({
 
 	strikeWave: r => {
 		const mark = P.str('~~');
-		return seqOrText([
+		return seqOrText(
 			mark,
 			P.seq([P.notMatch(P.alt([mark, newLine])), nest(r.inline)], 1).many(1),
 			mark,
-		]).map(result => {
+		).map(result => {
 			if (typeof result === 'string') return result;
 			return M.STRIKE(mergeText(result[1] as (M.MfmInline | string)[]));
 		});
@@ -469,17 +475,18 @@ export const language = P.createLanguage({
 			return result;
 		});
 		const fnClose = P.str(']');
-		return seqOrText([
+		return seqOrText(
 			P.str('$['),
 			fnName,
 			args.option(),
 			P.str(' '),
 			P.seq([P.notMatch(fnClose), nest(r.inline)], 1).many(1),
 			fnClose,
-		]).map(result => {
+		).map(result => {
 			if (typeof result === 'string') return result;
 			const name = result[1];
-			const args = result[2] || {};
+			// @ts-expect-error the Args should be Partial, but it is not.
+			const args: Args = result[2] || {};
 			const content = result[4];
 			return M.FN(name, args, mergeText(content));
 		});
