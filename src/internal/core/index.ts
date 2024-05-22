@@ -186,7 +186,7 @@ function succeeded<T>(value: T): Parser<T> {
 	});
 }
 
-export function notMatch(parser: Parser<any>): Parser<null> {
+export function notMatch(parser: Parser<unknown>): Parser<null> {
 	return new Parser((input, index, state) => {
 		const result = parser.handler(input, index, state);
 		return !result.success

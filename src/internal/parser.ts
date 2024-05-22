@@ -1,7 +1,7 @@
 import * as M from '..';
 import * as P from './core';
 import { mergeText } from './util';
-import { MfmInline, MfmNode, NodeType } from '..';
+import { MfmInline, MfmNode, MfmSimpleNode, NodeType } from '..';
 import { SeqParseResult } from './core';
 
 // NOTE:
@@ -67,9 +67,9 @@ function nest<T>(parser: P.Parser<T>, fallback?: P.Parser<string>): P.Parser<T |
 
 interface TypeTable {
 	fullParser: (MfmNode | string)[],
-	simpleParser: (MfmNode | string)[],
+	simpleParser: (MfmSimpleNode | string)[],
 	full: MfmNode | string,
-	simple: MfmNode | string,
+	simple: MfmSimpleNode | string,
 	inline: MfmInline | string,
 	quote: NodeType<'quote'>,
 	codeBlock: NodeType<'blockCode'>,
