@@ -1192,6 +1192,14 @@ hoge`;
 			];
 			assert.deepStrictEqual(mfm.parse(input), output);
 		});
+
+		test('bad url in url part', () => {
+			const input = "[test](http://..)";
+			const output = [
+				TEXT("[test](http://..)")
+			];
+			assert.deepStrictEqual(mfm.parse(input), output);
+		})
 	});
 
 	describe('fn', () => {

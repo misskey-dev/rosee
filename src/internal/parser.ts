@@ -680,7 +680,7 @@ export const language = P.createLanguage<TypeTable>({
 			return result;
 		});
 		const closeLabel = P.str(']');
-		return P.seq(
+		const parser = P.seq(
 			notLinkLabel,
 			P.alt([P.str('?['), P.str('[')]),
 			P.seq(
@@ -691,11 +691,19 @@ export const language = P.createLanguage<TypeTable>({
 			P.str('('),
 			P.alt([r.urlAlt, r.url]),
 			P.str(')'),
-		).map(result => {
-			const silent = (result[1] === '?[');
-			const label = result[2];
-			const url: M.MfmUrl = result[5];
-			return M.LINK(silent, url.props.url, mergeText(label));
+		);
+		return new P.Parser<M.MfmLink>((input, index, state) => {
+			const result = parser.handler(input, index, state);
+			if (!result.success) {
+				return P.failure();
+			}
+
+			const [, prefix, label,,, url] = result.value;
+
+			const silent = (prefix === '?[');
+			if (typeof url === 'string') return P.failure();
+			
+			return P.success(result.index, M.LINK(silent, url.props.url, mergeText(label)));
 		});
 	},
 
