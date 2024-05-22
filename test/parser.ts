@@ -1029,6 +1029,22 @@ hoge`;
 			assert.deepStrictEqual(mfm.parse(input), output);
 		});
 
+		test('match non-ascii characters contained url with angle brackets with silent', () => {
+			const input = '?<https://大石泉すき.example.com>';
+			const output = [
+				N_URL('https://大石泉すき.example.com', true, true),
+			];
+			assert.deepStrictEqual(mfm.parse(input), output);
+		});
+
+		test('match ascii characters contained url with angle brackets with silent', () => {
+			const input = '?<https://example.com>';
+			const output = [
+				N_URL('https://example.com', true, true),
+			];
+			assert.deepStrictEqual(mfm.parse(input), output);
+		});
+
 		test('prevent xss', () => {
 			const input = 'javascript:foo';
 			const output = [

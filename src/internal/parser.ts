@@ -701,7 +701,7 @@ export const language = P.createLanguage({
 	},
 
 	urlAlt: r => {
-		const open = P.str('<');
+		const open = P.alt([P.str('?<'), P.str('<')]);
 		const close = P.str('>');
 		const parser = P.seq([
 			notLinkLabel,
@@ -715,8 +715,9 @@ export const language = P.createLanguage({
 			if (!result.success) {
 				return P.failure();
 			}
-			const text = result.value.slice(1, (result.value.length - 1));
-			return P.success(result.index, M.N_URL(text, true));
+			const silent = result.value.startsWith('?');
+			const text = silent ? result.value.slice(2, (result.value.length - 1)) : result.value.slice(1, (result.value.length - 1));
+			return P.success(result.index, M.N_URL(text, true, silent));
 		});
 	},
 
