@@ -10,6 +10,16 @@
 ### Bugfixes
 
 -->
+## 0.24.1
+
+### Features
+- URL node with silence with `?<url>`
+
+### Improvements
+
+### Changes
+
+### Bugfixes
 
 ## 0.24.0
 ### Features
