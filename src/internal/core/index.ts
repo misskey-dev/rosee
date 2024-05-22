@@ -232,12 +232,15 @@ export function lazy<T>(fn: () => Parser<T>): Parser<T> {
 //type SyntaxReturn<T> = T extends (rules: Record<string, Parser<any>>) => infer R ? R : never;
 //export function createLanguage2<T extends Record<string, Syntax<any>>>(syntaxes: T): { [K in keyof T]: SyntaxReturn<T[K]> } {
 
+type ParserTable<T> = { [K in keyof T]: Parser<T[K]> };
+
 // TODO: 関数の型宣言をいい感じにしたい
-export function createLanguage<T>(syntaxes: { [K in keyof T]: (r: Record<string, Parser<any>>) => T[K] }): T {
-	const rules: Record<string, Parser<any>> = {};
-	for (const key of Object.keys(syntaxes)) {
+export function createLanguage<T>(syntaxes: { [K in keyof T]: (r: ParserTable<T>) => Parser<T[K]> }): ParserTable<T> {
+	// @ts-expect-error initializing object so type error here
+	const rules: ParserTable<T> = {};
+	for (const key of Object.keys(syntaxes) as (keyof T & string)[]) {
 		rules[key] = lazy(() => {
-			const parser = (syntaxes as any)[key](rules);
+			const parser = syntaxes[key](rules);
 			if (parser == null) {
 				throw new Error('syntax must return a parser.');
 			}
@@ -245,5 +248,5 @@ export function createLanguage<T>(syntaxes: { [K in keyof T]: (r: Record<string,
 			return parser;
 		});
 	}
-	return rules as any;
+	return rules;
 }

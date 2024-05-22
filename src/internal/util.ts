@@ -1,6 +1,8 @@
 import { isMfmBlock, MfmInline, MfmNode, MfmText, TEXT } from '../node';
 
-export function mergeText<T extends MfmNode>(nodes: ((T extends MfmInline ? MfmInline : MfmNode) | string)[]): (T | MfmText)[] {
+type ArrayRecursive<T> = T | Array<ArrayRecursive<T>>;
+
+export function mergeText<T extends MfmNode>(nodes: ArrayRecursive<((T extends MfmInline ? MfmInline : MfmNode) | string)>[]): (T | MfmText)[] {
 	const dest: (T | MfmText)[] = [];
 	const storedChars: string[] = [];
 

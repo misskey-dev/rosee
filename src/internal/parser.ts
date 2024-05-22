@@ -1,6 +1,7 @@
 import * as M from '..';
 import * as P from './core';
 import { mergeText } from './util';
+import { MfmInline, MfmNode, NodeType } from '..';
 
 // NOTE:
 // tsdのテストでファイルを追加しているにも関わらず「@twemoji/parser/dist/lib/regex」の型定義ファイルがないとエラーが出るため、
@@ -68,7 +69,42 @@ function nest<T>(parser: P.Parser<T>, fallback?: P.Parser<string>): P.Parser<T |
 	});
 }
 
-export const language = P.createLanguage({
+interface TypeTable {
+	fullParser: MfmNode[],
+	simpleParser: MfmNode[],
+	full: MfmNode,
+	simple: MfmNode,
+	inline: MfmInline,
+	quote: NodeType<'quote'>,
+	codeBlock: NodeType<'blockCode'>,
+	mathBlock: NodeType<'mathBlock'>,
+	centerTag: NodeType<'center'>,
+	big: NodeType<'fn'> | string,
+	boldAsta: NodeType<'bold'> | string,
+	boldTag: NodeType<'bold'> | string,
+	boldUnder: NodeType<'bold'>,
+	smallTag: NodeType<'small'> | string,
+	italicTag: NodeType<'italic'> | string,
+	italicAsta: NodeType<'italic'>,
+	italicUnder: NodeType<'italic'>,
+	strikeTag: NodeType<'strike'> | string,
+	strikeWave: NodeType<'strike'> | string,
+	unicodeEmoji: NodeType<'unicodeEmoji'>,
+	plainTag: NodeType<'plain'>,
+	fn: NodeType<'fn'> | string,
+	inlineCode: NodeType<'inlineCode'>,
+	mathInline: NodeType<'mathInline'>,
+	mention: NodeType<'mention'> | string,
+	hashtag: NodeType<'hashtag'> | string,
+	emojiCode: NodeType<'emojiCode'>,
+	link: NodeType<'link'>,
+	url: NodeType<'url'> | string,
+	urlAlt: NodeType<'url'> | string,
+	search: NodeType<'search'>,
+	text: string,
+}
+
+export const language = P.createLanguage<TypeTable>({
 	fullParser: r => {
 		return r.full.many(0);
 	},
