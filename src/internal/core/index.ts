@@ -91,17 +91,21 @@ export class Parser<T> {
 		});
 	}
 
-	sep(separator: Parser<any>, min: number): Parser<T[]> {
+	sep(separator: Parser<unknown>, min: number): Parser<T[]> {
 		if (min < 1) {
 			throw new Error('"min" must be a value greater than or equal to 1.');
 		}
-		return seq([
+		return seq(
 			this,
-			seq([
+			seq(
 				separator,
 				this,
-			], 1).many(min - 1),
-		]).map(result => [result[0], ...result[1]]);
+			).select(1).many(min - 1),
+		).map(result => [result[0], ...result[1]]);
+	}
+
+	select<K extends keyof T>(key: K): Parser<T[K]> {
+		return this.map(v => v[key]);
 	}
 
 	option<T>(): Parser<T | null> {
@@ -136,7 +140,17 @@ export function regexp<T extends RegExp>(pattern: T): Parser<string> {
 	});
 }
 
-export function seq(parsers: Parser<any>[], select?: number): Parser<any> {
+type ParsedType<T extends Parser<unknown>> = T extends Parser<infer U> ? U : never;
+
+export type SeqParseResult<T extends unknown[]> =
+	T extends [] ? [] 
+		: T extends [infer F, ...infer R]
+		? (
+			F extends Parser<unknown> ? [ParsedType<F>, ...SeqParseResult<R>] : [unknown, ...SeqParseResult<R>]
+			)
+		: unknown[];
+
+export function seq<Parsers extends Parser<unknown>[]>(...parsers: Parsers): Parser<SeqParseResult<Parsers>> {
 	return new Parser((input, index, state) => {
 		let result;
 		let latestIndex = index;
@@ -149,7 +163,7 @@ export function seq(parsers: Parser<any>[], select?: number): Parser<any> {
 			latestIndex = result.index;
 			accum.push(result.value);
 		}
-		return success(latestIndex, (select != null ? accum[select] : accum));
+		return success(latestIndex, accum as SeqParseResult<Parsers>);
 	});
 }
 

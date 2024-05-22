@@ -2,6 +2,7 @@ import * as M from '..';
 import * as P from './core';
 import { mergeText } from './util';
 import { MfmInline, MfmNode, NodeType } from '..';
+import { SeqParseResult } from './core';
 
 // NOTE:
 // tsdのテストでファイルを追加しているにも関わらず「@twemoji/parser/dist/lib/regex」の型定義ファイルがないとエラーが出るため、
@@ -16,11 +17,6 @@ type Args = Record<string, string | true>;
 const space = P.regexp(/[\u0020\u3000\t]/);
 const alphaAndNum = P.regexp(/[a-z0-9]/i);
 const newLine = P.alt([P.crlf, P.cr, P.lf]);
-
-type SeqParseResult<T extends unknown[]> =
-	T extends [P.Parser<infer A>, ...infer R] ? [A, ...SeqParseResult<R>]
-		: T extends [] ? []
-			: unknown[];
 
 function seqOrText<Parsers extends P.Parser<unknown>[]>(...parsers: Parsers): P.Parser<SeqParseResult<Parsers> | string> {
 	return new P.Parser<SeqParseResult<Parsers> | string>((input, index, state) => {
@@ -58,7 +54,7 @@ const nestable = new P.Parser((_input, index, state) => {
 function nest<T>(parser: P.Parser<T>, fallback?: P.Parser<string>): P.Parser<T | string> {
 	// nesting limited? -> No: specified parser, Yes: fallback parser (default = P.char)
 	const inner = P.alt([
-		P.seq([nestable, parser], 1),
+		P.seq(nestable, parser).select(1),
 		(fallback != null) ? fallback : P.char,
 	]);
 	return new P.Parser<T | string>((input, index, state) => {
@@ -228,19 +224,19 @@ export const language = P.createLanguage<TypeTable>({
 	},
 
 	quote: r => {
-		const lines: P.Parser<string[]> = P.seq([
+		const lines: P.Parser<string[]> = P.seq( 
 			P.str('>'),
 			space.option(),
-			P.seq([P.notMatch(newLine), P.char], 1).many(0).text(),
-		], 2).sep(newLine, 1);
-		const parser = P.seq([
+			P.seq(P.notMatch(newLine), P.char).select(1).many(0).text(),
+		).select(2).sep(newLine, 1);
+		const parser = P.seq( 
 			newLine.option(),
 			newLine.option(),
 			P.lineBegin,
 			lines,
 			newLine.option(),
 			newLine.option(),
-		], 3);
+		).select(3);
 		return new P.Parser((input, index, state) => {
 			let result;
 			// parse quote
@@ -266,20 +262,20 @@ export const language = P.createLanguage<TypeTable>({
 
 	codeBlock: () => {
 		const mark = P.str('```');
-		return P.seq([
+		return P.seq(
 			newLine.option(),
 			P.lineBegin,
 			mark,
-			P.seq([P.notMatch(newLine), P.char], 1).many(0),
+			P.seq(P.notMatch(newLine), P.char).select(1).many(0),
 			newLine,
-			P.seq([P.notMatch(P.seq([newLine, mark, P.lineEnd])), P.char], 1).many(1),
+			P.seq(P.notMatch(P.seq(newLine, mark, P.lineEnd)), P.char).select(1).many(1),
 			newLine,
 			mark,
 			P.lineEnd,
 			newLine.option(),
-		]).map(result => {
-			const lang = (result[3] as string[]).join('').trim();
-			const code = (result[5] as string[]).join('');
+		).map(result => {
+			const lang = result[3].join('').trim();
+			const code = result[5].join('');
 			return M.CODE_BLOCK(code, (lang.length > 0 ? lang : null));
 		});
 	},
@@ -287,18 +283,18 @@ export const language = P.createLanguage<TypeTable>({
 	mathBlock: () => {
 		const open = P.str('\\[');
 		const close = P.str('\\]');
-		return P.seq([
+		return P.seq(
 			newLine.option(),
 			P.lineBegin,
 			open,
 			newLine.option(),
-			P.seq([P.notMatch(P.seq([newLine.option(), close])), P.char], 1).many(1),
+			P.seq(P.notMatch(P.seq(newLine.option(), close)), P.char).select(1).many(1),
 			newLine.option(),
 			close,
 			P.lineEnd,
 			newLine.option(),
-		]).map(result => {
-			const formula = (result[4] as string[]).join('');
+		).map(result => {
+			const formula = result[4].join('');
 			return M.MATH_BLOCK(formula);
 		});
 	},
@@ -306,17 +302,17 @@ export const language = P.createLanguage<TypeTable>({
 	centerTag: r => {
 		const open = P.str('<center>');
 		const close = P.str('</center>');
-		return P.seq([
+		return P.seq(
 			newLine.option(),
 			P.lineBegin,
 			open,
 			newLine.option(),
-			P.seq([P.notMatch(P.seq([newLine.option(), close])), nest(r.inline)], 1).many(1),
+			P.seq(P.notMatch(P.seq(newLine.option(), close)), nest(r.inline)).select(1).many(1),
 			newLine.option(),
 			close,
 			P.lineEnd,
 			newLine.option(),
-		]).map(result => {
+		).map(result => {
 			return M.CENTER(mergeText(result[4]));
 		});
 	},
@@ -325,7 +321,7 @@ export const language = P.createLanguage<TypeTable>({
 		const mark = P.str('***');
 		return seqOrText(
 			mark,
-			P.seq([P.notMatch(mark), nest(r.inline)], 1).many(1),
+			P.seq(P.notMatch(mark), nest(r.inline)).select(1).many(1),
 			mark,
 		).map(result => {
 			if (typeof result === 'string') return result;
@@ -337,7 +333,7 @@ export const language = P.createLanguage<TypeTable>({
 		const mark = P.str('**');
 		return seqOrText(
 			mark,
-			P.seq([P.notMatch(mark), nest(r.inline)], 1).many(1),
+			P.seq(P.notMatch(mark), nest(r.inline)).select(1).many(1),
 			mark,
 		).map(result => {
 			if (typeof result === 'string') return result;
@@ -350,7 +346,7 @@ export const language = P.createLanguage<TypeTable>({
 		const close = P.str('</b>');
 		return seqOrText(
 			open,
-			P.seq([P.notMatch(close), nest(r.inline)], 1).many(1),
+			P.seq(P.notMatch(close), nest(r.inline)).select(1).many(1),
 			close,
 		).map(result => {
 			if (typeof result === 'string') return result;
@@ -360,11 +356,11 @@ export const language = P.createLanguage<TypeTable>({
 
 	boldUnder: () => {
 		const mark = P.str('__');
-		return P.seq([
+		return P.seq(
 			mark,
 			P.alt([alphaAndNum, space]).many(1),
 			mark,
-		]).map(result => M.BOLD(mergeText(result[1] as string[])));
+		).map(result => M.BOLD(mergeText(result[1] as string[])));
 	},
 
 	smallTag: r => {
@@ -372,11 +368,11 @@ export const language = P.createLanguage<TypeTable>({
 		const close = P.str('</small>');
 		return seqOrText(
 			open,
-			P.seq([P.notMatch(close), nest(r.inline)], 1).many(1),
+			P.seq(P.notMatch(close), nest(r.inline)).select(1).many(1),
 			close,
 		).map(result => {
 			if (typeof result === 'string') return result;
-			return M.SMALL(mergeText(result[1] as (M.MfmInline | string)[]));
+			return M.SMALL(mergeText(result[1]));
 		});
 	},
 
@@ -385,21 +381,21 @@ export const language = P.createLanguage<TypeTable>({
 		const close = P.str('</i>');
 		return seqOrText(
 			open,
-			P.seq([P.notMatch(close), nest(r.inline)], 1).many(1),
+			P.seq(P.notMatch(close), nest(r.inline)).select(1).many(1),
 			close,
 		).map(result => {
 			if (typeof result === 'string') return result;
-			return M.ITALIC(mergeText(result[1] as (M.MfmInline | string)[]));
+			return M.ITALIC(mergeText(result[1]));
 		});
 	},
 
 	italicAsta: () => {
 		const mark = P.str('*');
-		const parser = P.seq([
+		const parser = P.seq(
 			mark,
 			P.alt([alphaAndNum, space]).many(1),
 			mark,
-		]);
+		);
 		return new P.Parser((input, index, state) => {
 			const result = parser.handler(input, index, state);
 			if (!result.success) {
@@ -416,11 +412,11 @@ export const language = P.createLanguage<TypeTable>({
 
 	italicUnder: () => {
 		const mark = P.str('_');
-		const parser = P.seq([
+		const parser = P.seq(
 			mark,
 			P.alt([alphaAndNum, space]).many(1),
 			mark,
-		]);
+		);
 		return new P.Parser((input, index, state) => {
 			const result = parser.handler(input, index, state);
 			if (!result.success) {
@@ -440,11 +436,11 @@ export const language = P.createLanguage<TypeTable>({
 		const close = P.str('</s>');
 		return seqOrText(
 			open,
-			P.seq([P.notMatch(close), nest(r.inline)], 1).many(1),
+			P.seq(P.notMatch(close), nest(r.inline)).select(1).many(1),
 			close,
 		).map(result => {
 			if (typeof result === 'string') return result;
-			return M.STRIKE(mergeText(result[1] as (M.MfmInline | string)[]));
+			return M.STRIKE(mergeText(result[1]));
 		});
 	},
 
@@ -452,7 +448,7 @@ export const language = P.createLanguage<TypeTable>({
 		const mark = P.str('~~');
 		return seqOrText(
 			mark,
-			P.seq([P.notMatch(P.alt([mark, newLine])), nest(r.inline)], 1).many(1),
+			P.seq(P.notMatch(P.alt([mark, newLine])), nest(r.inline)).select(1).many(1),
 			mark,
 		).map(result => {
 			if (typeof result === 'string') return result;
@@ -468,16 +464,16 @@ export const language = P.createLanguage<TypeTable>({
 	plainTag: () => {
 		const open = P.str('<plain>');
 		const close = P.str('</plain>');
-		return P.seq([
+		return P.seq( 
 			open,
 			newLine.option(),
-			P.seq([
-				P.notMatch(P.seq([newLine.option(), close])),
+			P.seq(
+				P.notMatch(P.seq(newLine.option(), close)),
 				P.char,
-			], 1).many(1).text(),
+			).select(1).many(1).text(),
 			newLine.option(),
 			close,
-		], 2).map(result => M.PLAIN(result));
+		).select(2).map(result => M.PLAIN(result));
 	},
 
 	fn: r => {
@@ -488,22 +484,22 @@ export const language = P.createLanguage<TypeTable>({
 			}
 			return P.success(result.index, result.value);
 		});
-		const arg: P.Parser<ArgPair> = P.seq([
+		const arg: P.Parser<ArgPair> = P.seq(
 			P.regexp(/[a-z0-9_]+/i),
-			P.seq([
+			P.seq(
 				P.str('='),
 				P.regexp(/[a-z0-9_.-]+/i),
-			], 1).option(),
-		]).map(result => {
+			).select(1).option() as P.Parser<string | null>,
+		).map(result => {
 			return {
 				k: result[0],
 				v: (result[1] != null) ? result[1] : true,
 			};
 		});
-		const args = P.seq([
+		const args = P.seq(
 			P.str('.'),
 			arg.sep(P.str(','), 1),
-		], 1).map(pairs => {
+		).select(1).map(pairs => {
 			const result: Args = { };
 			for (const pair of pairs) {
 				result[pair.k] = pair.v;
@@ -516,7 +512,7 @@ export const language = P.createLanguage<TypeTable>({
 			fnName,
 			args.option(),
 			P.str(' '),
-			P.seq([P.notMatch(fnClose), nest(r.inline)], 1).many(1),
+			P.seq(P.notMatch(fnClose), nest(r.inline)).select(1).many(1),
 			fnClose,
 		).map(result => {
 			if (typeof result === 'string') return result;
@@ -530,39 +526,39 @@ export const language = P.createLanguage<TypeTable>({
 
 	inlineCode: () => {
 		const mark = P.str('`');
-		return P.seq([
+		return P.seq(
 			mark,
-			P.seq([
+			P.seq(
 				P.notMatch(P.alt([mark, P.str('´'), newLine])),
 				P.char,
-			], 1).many(1),
+			).select(1).many(1),
 			mark,
-		]).map(result => M.INLINE_CODE(result[1].join('')));
+		).map(result => M.INLINE_CODE(result[1].join('')));
 	},
 
 	mathInline: () => {
 		const open = P.str('\\(');
 		const close = P.str('\\)');
-		return P.seq([
+		return P.seq(
 			open,
-			P.seq([
+			P.seq(
 				P.notMatch(P.alt([close, newLine])),
 				P.char,
-			], 1).many(1),
+			).select(1).many(1),
 			close,
-		]).map(result => M.MATH_INLINE(result[1].join('')));
+		).map(result => M.MATH_INLINE(result[1].join('')));
 	},
 
 	mention: () => {
-		const parser = P.seq([
+		const parser = P.seq(
 			notLinkLabel,
 			P.str('@'),
 			P.regexp(/[a-z0-9_-]+/i),
-			P.seq([
+			P.seq(
 				P.str('@'),
 				P.regexp(/[a-z0-9_.-]+/i),
-			], 1).option(),
-		]);
+			).select(1).option() as P.Parser<string | null>,
+		);
 		return new P.Parser<M.MfmMention | string>((input, index, state) => {
 			let result;
 			result = parser.handler(input, index, state);
@@ -621,30 +617,30 @@ export const language = P.createLanguage<TypeTable>({
 
 	hashtag: () => {
 		const mark = P.str('#');
-		const hashTagChar = P.seq([
+		const hashTagChar = P.seq(
 			P.notMatch(P.alt([P.regexp(/[ \u3000\t.,!?'"#:/[\]【】()「」（）<>]/), space, newLine])),
 			P.char,
-		], 1);
+		).select(1);
 		const innerItem: P.Parser<unknown> = P.lazy(() => P.alt([
-			P.seq([
+			P.seq(
 				P.str('('), nest(innerItem, hashTagChar).many(0), P.str(')'),
-			]),
-			P.seq([
+			),
+			P.seq(
 				P.str('['), nest(innerItem, hashTagChar).many(0), P.str(']'),
-			]),
-			P.seq([
+			),
+			P.seq(
 				P.str('「'), nest(innerItem, hashTagChar).many(0), P.str('」'),
-			]),
-			P.seq([
+			),
+			P.seq(
 				P.str('（'), nest(innerItem, hashTagChar).many(0), P.str('）'),
-			]),
+			),
 			hashTagChar,
 		]));
-		const parser = P.seq([
+		const parser = P.seq( 
 			notLinkLabel,
 			mark,
 			innerItem.many(1).text(),
-		], 2);
+		).select(2);
 		return new P.Parser((input, index, state) => {
 			const result = parser.handler(input, index, state);
 			if (!result.success) {
@@ -668,13 +664,13 @@ export const language = P.createLanguage<TypeTable>({
 	emojiCode: () => {
 		const side = P.notMatch(P.regexp(/[a-z0-9]/i));
 		const mark = P.str(':');
-		return P.seq([
+		return P.seq( 
 			P.alt([P.lineBegin, side]),
 			mark,
 			P.regexp(/[a-z0-9_+-]+/i),
 			mark,
 			P.alt([P.lineEnd, side]),
-		], 2).map(name => M.EMOJI_CODE(name as string));
+		).select(2).map(name => M.EMOJI_CODE(name));
 	},
 
 	link: r => {
@@ -685,18 +681,18 @@ export const language = P.createLanguage<TypeTable>({
 			return result;
 		});
 		const closeLabel = P.str(']');
-		return P.seq([
+		return P.seq(
 			notLinkLabel,
 			P.alt([P.str('?['), P.str('[')]),
-			P.seq([
+			P.seq(
 				P.notMatch(P.alt([closeLabel, newLine])),
 				nest(labelInline),
-			], 1).many(1),
+			).select(1).many(1),
 			closeLabel,
 			P.str('('),
 			P.alt([r.urlAlt, r.url]),
 			P.str(')'),
-		]).map(result => {
+		).map(result => {
 			const silent = (result[1] === '?[');
 			const label = result[2];
 			const url: M.MfmUrl = result[5];
@@ -707,19 +703,19 @@ export const language = P.createLanguage<TypeTable>({
 	url: () => {
 		const urlChar = P.regexp(/[.,a-z0-9_/:%#@$&?!~=+-]/i);
 		const innerItem: P.Parser<unknown> = P.lazy(() => P.alt([
-			P.seq([
+			P.seq(
 				P.str('('), nest(innerItem, urlChar).many(0), P.str(')'),
-			]),
-			P.seq([
+			),
+			P.seq(
 				P.str('['), nest(innerItem, urlChar).many(0), P.str(']'),
-			]),
+			),
 			urlChar,
 		]));
-		const parser = P.seq([
+		const parser = P.seq(
 			notLinkLabel,
 			P.regexp(/https?:\/\//),
 			innerItem.many(1).text(),
-		]);
+		);
 		return new P.Parser<M.MfmUrl | string>((input, index, state) => {
 			let result;
 			result = parser.handler(input, index, state);
@@ -746,13 +742,13 @@ export const language = P.createLanguage<TypeTable>({
 	urlAlt: () => {
 		const open = P.str('<');
 		const close = P.str('>');
-		const parser = P.seq([
+		const parser = P.seq(
 			notLinkLabel,
 			open,
 			P.regexp(/https?:\/\//),
-			P.seq([P.notMatch(P.alt([close, space])), P.char], 1).many(1),
+			P.seq(P.notMatch(P.alt([close, space])), P.char).select(1).many(1),
 			close,
-		]).text();
+		).text();
 		return new P.Parser((input, index, state) => {
 			const result = parser.handler(input, index, state);
 			if (!result.success) {
@@ -768,21 +764,21 @@ export const language = P.createLanguage<TypeTable>({
 			P.regexp(/\[(検索|search)\]/i),
 			P.regexp(/(検索|search)/i),
 		]);
-		return P.seq([
+		return P.seq(
 			newLine.option(),
 			P.lineBegin,
-			P.seq([
+			P.seq(
 				P.notMatch(P.alt([
 					newLine,
-					P.seq([space, button, P.lineEnd]),
+					P.seq(space, button, P.lineEnd),
 				])),
 				P.char,
-			], 1).many(1),
+			).select(1).many(1),
 			space,
 			button,
 			P.lineEnd,
 			newLine.option(),
-		]).map(result => {
+		).map(result => {
 			const query = result[2].join('');
 			return M.SEARCH(query, `${query}${result[3]}${result[4]}`);
 		});
