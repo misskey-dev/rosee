@@ -489,7 +489,7 @@ export const language = P.createLanguage<TypeTable>({
 			P.seq(
 				P.str('='),
 				P.regexp(/[a-z0-9_.-]+/i),
-			).select(1).option() as P.Parser<string | null>,
+			).select(1).option(),
 		).map(result => {
 			return {
 				k: result[0],
@@ -517,7 +517,6 @@ export const language = P.createLanguage<TypeTable>({
 		).map(result => {
 			if (typeof result === 'string') return result;
 			const name = result[1];
-			// @ts-expect-error the Args should be Partial, but it is not.
 			const args: Args = result[2] || {};
 			const content = result[4];
 			return M.FN(name, args, mergeText(content));
@@ -557,7 +556,7 @@ export const language = P.createLanguage<TypeTable>({
 			P.seq(
 				P.str('@'),
 				P.regexp(/[a-z0-9_.-]+/i),
-			).select(1).option() as P.Parser<string | null>,
+			).select(1).option(),
 		);
 		return new P.Parser<M.MfmMention | string>((input, index, state) => {
 			let result;

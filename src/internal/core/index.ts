@@ -108,7 +108,7 @@ export class Parser<T> {
 		return this.map(v => v[key]);
 	}
 
-	option<T>(): Parser<T | null> {
+	option(): Parser<T | null> {
 		return alt([
 			this,
 			succeeded(null),
