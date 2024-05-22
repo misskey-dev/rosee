@@ -222,7 +222,7 @@ export const language = P.createLanguage({
 		});
 	},
 
-	codeBlock: r => {
+	codeBlock: () => {
 		const mark = P.str('```');
 		return P.seq([
 			newLine.option(),
@@ -242,7 +242,7 @@ export const language = P.createLanguage({
 		});
 	},
 
-	mathBlock: r => {
+	mathBlock: () => {
 		const open = P.str('\\[');
 		const close = P.str('\\]');
 		return P.seq([
@@ -316,7 +316,7 @@ export const language = P.createLanguage({
 		});
 	},
 
-	boldUnder: r => {
+	boldUnder: () => {
 		const mark = P.str('__');
 		return P.seq([
 			mark,
@@ -351,7 +351,7 @@ export const language = P.createLanguage({
 		});
 	},
 
-	italicAsta: r => {
+	italicAsta: () => {
 		const mark = P.str('*');
 		const parser = P.seq([
 			mark,
@@ -372,7 +372,7 @@ export const language = P.createLanguage({
 		});
 	},
 
-	italicUnder: r => {
+	italicUnder: () => {
 		const mark = P.str('_');
 		const parser = P.seq([
 			mark,
@@ -418,12 +418,12 @@ export const language = P.createLanguage({
 		});
 	},
 
-	unicodeEmoji: r => {
+	unicodeEmoji: () => {
 		const emoji = RegExp(twemojiRegex.source);
 		return P.regexp(emoji).map(content => M.UNI_EMOJI(content));
 	},
 
-	plainTag: r => {
+	plainTag: () => {
 		const open = P.str('<plain>');
 		const close = P.str('</plain>');
 		return P.seq([
@@ -485,7 +485,7 @@ export const language = P.createLanguage({
 		});
 	},
 
-	inlineCode: r => {
+	inlineCode: () => {
 		const mark = P.str('`');
 		return P.seq([
 			mark,
@@ -497,7 +497,7 @@ export const language = P.createLanguage({
 		]).map(result => M.INLINE_CODE(result[1].join('')));
 	},
 
-	mathInline: r => {
+	mathInline: () => {
 		const open = P.str('\\(');
 		const close = P.str('\\)');
 		return P.seq([
@@ -510,7 +510,7 @@ export const language = P.createLanguage({
 		]).map(result => M.MATH_INLINE(result[1].join('')));
 	},
 
-	mention: r => {
+	mention: () => {
 		const parser = P.seq([
 			notLinkLabel,
 			P.str('@'),
@@ -576,13 +576,13 @@ export const language = P.createLanguage({
 		});
 	},
 
-	hashtag: r => {
+	hashtag: () => {
 		const mark = P.str('#');
 		const hashTagChar = P.seq([
 			P.notMatch(P.alt([P.regexp(/[ \u3000\t.,!?'"#:/[\]【】()「」（）<>]/), space, newLine])),
 			P.char,
 		], 1);
-		const innerItem: P.Parser<any> = P.lazy(() => P.alt([
+		const innerItem: P.Parser<unknown> = P.lazy(() => P.alt([
 			P.seq([
 				P.str('('), nest(innerItem, hashTagChar).many(0), P.str(')'),
 			]),
@@ -622,7 +622,7 @@ export const language = P.createLanguage({
 		});
 	},
 
-	emojiCode: r => {
+	emojiCode: () => {
 		const side = P.notMatch(P.regexp(/[a-z0-9]/i));
 		const mark = P.str(':');
 		return P.seq([
@@ -661,9 +661,9 @@ export const language = P.createLanguage({
 		});
 	},
 
-	url: r => {
+	url: () => {
 		const urlChar = P.regexp(/[.,a-z0-9_/:%#@$&?!~=+-]/i);
-		const innerItem: P.Parser<any> = P.lazy(() => P.alt([
+		const innerItem: P.Parser<unknown> = P.lazy(() => P.alt([
 			P.seq([
 				P.str('('), nest(innerItem, urlChar).many(0), P.str(')'),
 			]),
@@ -700,7 +700,7 @@ export const language = P.createLanguage({
 		});
 	},
 
-	urlAlt: r => {
+	urlAlt: () => {
 		const open = P.str('<');
 		const close = P.str('>');
 		const parser = P.seq([
@@ -720,7 +720,7 @@ export const language = P.createLanguage({
 		});
 	},
 
-	search: r => {
+	search: () => {
 		const button = P.alt([
 			P.regexp(/\[(検索|search)\]/i),
 			P.regexp(/(検索|search)/i),
@@ -745,5 +745,5 @@ export const language = P.createLanguage({
 		});
 	},
 
-	text: r => P.char,
+	text: () => P.char,
 });

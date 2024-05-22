@@ -31,7 +31,7 @@ export class Parser<T> {
 	public handler: ParserHandler<T>;
 
 	constructor(handler: ParserHandler<T>, name?: string) {
-		this.handler = (input, index, state) => {
+		this.handler = (input, index, state) : Failure | Success<T> => {
 			if (state.trace && this.name != null) {
 				const pos = `${index}`;
 				console.log(`${pos.padEnd(6, ' ')}enter ${this.name}`);

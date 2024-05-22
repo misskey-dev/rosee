@@ -7,7 +7,7 @@ export function mergeText<T extends MfmNode>(nodes: ((T extends MfmInline ? MfmI
 	/**
 	 * Generate a text node from the stored chars, And push it.
 	*/
-	function generateText() {
+	function generateText(): void {
 		if (storedChars.length > 0) {
 			dest.push(TEXT(storedChars.join('')));
 			storedChars.length = 0;
@@ -136,7 +136,7 @@ export function stringifyTree(nodes: MfmNode[]): string {
 		// block -> inline  : Yes
 		// block -> block   : Yes
 
-		let pushLf: boolean = true;
+		let pushLf = true;
 		if (isMfmBlock(node)) {
 			if (state === stringifyState.none) {
 				pushLf = false;
@@ -159,7 +159,7 @@ export function stringifyTree(nodes: MfmNode[]): string {
 	return dest.map(n => stringifyNode(n)).join('');
 }
 
-export function inspectOne(node: MfmNode, action: (node: MfmNode) => void) {
+export function inspectOne(node: MfmNode, action: (node: MfmNode) => void): void {
 	action(node);
 	if (node.children != null) {
 		for (const child of node.children) {

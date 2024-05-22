@@ -43,14 +43,21 @@ module.exports = {
 		'prefer-arrow-callback': ['error'],
 		'no-throw-literal': ['error'],
 		'no-param-reassign': ['warn'],
-		'no-constant-condition': ['warn'],
+		'no-constant-condition': ['warn', {
+			checkLoops: false,
+		}],
 		'no-empty-pattern': ['warn'],
-		'@typescript-eslint/no-unnecessary-condition': ['warn'],
+		'@typescript-eslint/no-unnecessary-condition': ['warn', {
+			allowConstantLoopConditions: true,
+		}],
 		'@typescript-eslint/no-inferrable-types': ['warn'],
 		'@typescript-eslint/no-non-null-assertion': ['warn'],
 		'@typescript-eslint/explicit-function-return-type': ['warn'],
 		'@typescript-eslint/no-misused-promises': ['error', {
 			'checksVoidReturn': false,
 		}],
+		'@typescript-eslint/no-unused-vars': ['error', {
+			"argsIgnorePattern": "^_",
+		}]
 	},
 };
