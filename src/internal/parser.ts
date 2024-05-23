@@ -1,6 +1,7 @@
 import * as M from '..';
 import * as P from './core';
 import { mergeText } from './util';
+import { SeqParseResult } from './core';
 
 // NOTE:
 // tsdのテストでファイルを追加しているにも関わらず「@twemoji/parser/dist/lib/regex」の型定義ファイルがないとエラーが出るため、
@@ -16,13 +17,13 @@ const space = P.regexp(/[\u0020\u3000\t]/);
 const alphaAndNum = P.regexp(/[a-z0-9]/i);
 const newLine = P.alt([P.crlf, P.cr, P.lf]);
 
-function seqOrText<Parsers extends P.Parser<unknown, never>[]>(...parsers: Parsers): P.Parser<P.SeqParseResult<Parsers> | string, P.CommonState<Parsers>> {
-	return new P.Parser<P.SeqParseResult<Parsers> | string, P.CommonState<Parsers>>((input, index, state) => {
+function seqOrText<Parsers extends P.Parser<unknown>[]>(...parsers: Parsers): P.Parser<SeqParseResult<Parsers> | string> {
+	return new P.Parser<SeqParseResult<Parsers> | string>((input, index, state) => {
 		// TODO: typesafe implementation
 		const accum: unknown[] = [];
 		let latestIndex = index;
 		for (let i = 0 ; i < parsers.length; i++) {
-			const result = parsers[i].handler(input, latestIndex, state as never);
+			const result = parsers[i].handler(input, latestIndex, state);
 			if (!result.success) {
 				if (latestIndex === index) {
 					return P.failure();
@@ -33,38 +34,29 @@ function seqOrText<Parsers extends P.Parser<unknown, never>[]>(...parsers: Parse
 			accum.push(result.value);
 			latestIndex = result.index;
 		}
-		return P.success(latestIndex, accum as P.SeqParseResult<Parsers>);
+		return P.success(latestIndex, accum as SeqParseResult<Parsers>);
 	});
 }
 
-interface LinkState extends P.StateBase {
-	linkLabel?: boolean;
-}
-
-const notLinkLabel = new P.Parser((_input, index, state: LinkState) => {
+const notLinkLabel = new P.Parser((_input, index, state) => {
 	return (!state.linkLabel)
 		? P.success(index, null)
 		: P.failure();
 });
 
-interface RecursiveState extends P.StateBase {
-	depth: number;
-	nestLimit: number;
-}
-
-const nestable = new P.Parser<null, RecursiveState>((_input, index, state) => {
+const nestable = new P.Parser((_input, index, state) => {
 	return (state.depth < state.nestLimit)
 		? P.success(index, null)
 		: P.failure();
 });
 
-function nest<T, S extends P.StateBase>(parser: P.Parser<T, S>, fallback?: P.Parser<string, S>): P.Parser<T | string, S & RecursiveState> {
+function nest<T>(parser: P.Parser<T>, fallback?: P.Parser<string>): P.Parser<T | string> {
 	// nesting limited? -> No: specified parser, Yes: fallback parser (default = P.char)
-	const inner: P.Parser<string | T, S & RecursiveState> = P.alt([
+	const inner = P.alt([
 		P.seq(nestable, parser).select(1),
 		(fallback != null) ? fallback : P.char,
 	]);
-	return new P.Parser<T | string, S & RecursiveState>((input, index, state) => {
+	return new P.Parser<T | string>((input, index, state) => {
 		state.depth++;
 		const result = inner.handler(input, index, state);
 		state.depth--;
@@ -231,7 +223,7 @@ export const language = P.createLanguage<TypeTable>({
 	},
 
 	quote: r => {
-		const lines = P.seq( 
+		const lines: P.Parser<string[]> = P.seq( 
 			P.str('>'),
 			space.option(),
 			P.seq(P.notMatch(newLine), P.char).select(1).many(0).text(),
@@ -324,7 +316,7 @@ export const language = P.createLanguage<TypeTable>({
 		});
 	},
 
-	big: (r) => {
+	big: r => {
 		const mark = P.str('***');
 		return seqOrText(
 			mark,
@@ -491,7 +483,7 @@ export const language = P.createLanguage<TypeTable>({
 			}
 			return P.success(result.index, result.value);
 		});
-		const arg = P.seq(
+		const arg: P.Parser<ArgPair> = P.seq(
 			P.regexp(/[a-z0-9_]+/i),
 			P.seq(
 				P.str('='),
@@ -501,7 +493,7 @@ export const language = P.createLanguage<TypeTable>({
 			return {
 				k: result[0],
 				v: (result[1] != null) ? result[1] : true,
-			} as ArgPair;
+			};
 		});
 		const args = P.seq(
 			P.str('.'),
@@ -565,7 +557,7 @@ export const language = P.createLanguage<TypeTable>({
 				P.regexp(/[a-z0-9_.-]+/i),
 			).select(1).option(),
 		);
-		return new P.Parser<M.MfmMention | string, LinkState>((input, index, state) => {
+		return new P.Parser<M.MfmMention | string>((input, index, state) => {
 			let result;
 			result = parser.handler(input, index, state);
 			if (!result.success) {
@@ -627,7 +619,7 @@ export const language = P.createLanguage<TypeTable>({
 			P.notMatch(P.alt([P.regexp(/[ \u3000\t.,!?'"#:/[\]【】()「」（）<>]/), space, newLine])),
 			P.char,
 		).select(1);
-		const innerItem: P.Parser<unknown, RecursiveState> = P.lazy(() => P.alt([
+		const innerItem: P.Parser<unknown> = P.lazy(() => P.alt([
 			P.seq(
 				P.str('('), nest(innerItem, hashTagChar).many(0), P.str(')'),
 			),
@@ -680,7 +672,7 @@ export const language = P.createLanguage<TypeTable>({
 	},
 
 	link: r => {
-		const labelInline = new P.Parser((input, index, state: LinkState) => {
+		const labelInline = new P.Parser((input, index, state) => {
 			state.linkLabel = true;
 			const result = r.inline.handler(input, index, state);
 			state.linkLabel = false;
@@ -699,7 +691,7 @@ export const language = P.createLanguage<TypeTable>({
 			P.alt([r.urlAlt, r.url]),
 			P.str(')'),
 		);
-		return new P.Parser<M.MfmLink, RecursiveState>((input, index, state) => {
+		return new P.Parser<M.MfmLink>((input, index, state) => {
 			const result = parser.handler(input, index, state);
 			if (!result.success) {
 				return P.failure();
@@ -716,7 +708,7 @@ export const language = P.createLanguage<TypeTable>({
 
 	url: () => {
 		const urlChar = P.regexp(/[.,a-z0-9_/:%#@$&?!~=+-]/i);
-		const innerItem: P.Parser<unknown, RecursiveState> = P.lazy(() => P.alt([
+		const innerItem: P.Parser<unknown> = P.lazy(() => P.alt([
 			P.seq(
 				P.str('('), nest(innerItem, urlChar).many(0), P.str(')'),
 			),
@@ -730,7 +722,7 @@ export const language = P.createLanguage<TypeTable>({
 			P.regexp(/https?:\/\//),
 			innerItem.many(1).text(),
 		);
-		return new P.Parser<M.MfmUrl | string, RecursiveState>((input, index, state) => {
+		return new P.Parser<M.MfmUrl | string>((input, index, state) => {
 			let result;
 			result = parser.handler(input, index, state);
 			if (!result.success) {

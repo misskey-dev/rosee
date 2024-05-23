@@ -12,7 +12,7 @@ export function fullParser(input: string, opts: FullParserOpts): M.MfmNode[] {
 		depth: 0,
 		linkLabel: false,
 		trace: false,
-	} as never);
+	});
 	if (!result.success) throw new Error('Unexpected parse error');
 	return mergeText(result.value);
 }
