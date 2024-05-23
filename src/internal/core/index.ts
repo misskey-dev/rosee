@@ -12,7 +12,14 @@ export type Failure = { success: false };
 
 export type Result<T> = Success<T> | Failure;
 
-export type ParserHandler<T> = (input: string, index: number, state: any) => Result<T>
+interface State {
+	trace?: boolean,
+	linkLabel?: boolean,
+	nestLimit: number,
+	depth: number,
+}
+
+export type ParserHandler<T> = (input: string, index: number, state: State) => Result<T>
 
 export function success<T>(index: number, value: T): Success<T> {
 	return {
