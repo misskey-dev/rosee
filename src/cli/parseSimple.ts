@@ -2,7 +2,7 @@ import { performance } from 'perf_hooks';
 import inputLine, { InputCanceledError } from './misc/inputLine';
 import { parseSimple } from '..';
 
-async function entryPoint() {
+async function entryPoint(): Promise<void> {
 	console.log('intaractive simple parser');
 
 	while (true) {

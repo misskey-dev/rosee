@@ -12,7 +12,14 @@ export type Failure = { success: false };
 
 export type Result<T> = Success<T> | Failure;
 
-export type ParserHandler<T> = (input: string, index: number, state: any) => Result<T>
+interface State {
+	trace?: boolean,
+	linkLabel?: boolean,
+	nestLimit: number,
+	depth: number,
+}
+
+export type ParserHandler<T> = (input: string, index: number, state: State) => Result<T>
 
 export function success<T>(index: number, value: T): Success<T> {
 	return {
@@ -31,7 +38,7 @@ export class Parser<T> {
 	public handler: ParserHandler<T>;
 
 	constructor(handler: ParserHandler<T>, name?: string) {
-		this.handler = (input, index, state) => {
+		this.handler = (input, index, state) : Failure | Success<T> => {
 			if (state.trace && this.name != null) {
 				const pos = `${index}`;
 				console.log(`${pos.padEnd(6, ' ')}enter ${this.name}`);
@@ -91,20 +98,24 @@ export class Parser<T> {
 		});
 	}
 
-	sep(separator: Parser<any>, min: number): Parser<T[]> {
+	sep(separator: Parser<unknown>, min: number): Parser<T[]> {
 		if (min < 1) {
 			throw new Error('"min" must be a value greater than or equal to 1.');
 		}
-		return seq([
+		return seq(
 			this,
-			seq([
+			seq(
 				separator,
 				this,
-			], 1).many(min - 1),
-		]).map(result => [result[0], ...result[1]]);
+			).select(1).many(min - 1),
+		).map(result => [result[0], ...result[1]]);
 	}
 
-	option<T>(): Parser<T | null> {
+	select<K extends keyof T>(key: K): Parser<T[K]> {
+		return this.map(v => v[key]);
+	}
+
+	option(): Parser<T | null> {
 		return alt([
 			this,
 			succeeded(null),
@@ -136,7 +147,17 @@ export function regexp<T extends RegExp>(pattern: T): Parser<string> {
 	});
 }
 
-export function seq(parsers: Parser<any>[], select?: number): Parser<any> {
+type ParsedType<T extends Parser<unknown>> = T extends Parser<infer U> ? U : never;
+
+export type SeqParseResult<T extends unknown[]> =
+	T extends [] ? [] 
+		: T extends [infer F, ...infer R]
+		? (
+			F extends Parser<unknown> ? [ParsedType<F>, ...SeqParseResult<R>] : [unknown, ...SeqParseResult<R>]
+			)
+		: unknown[];
+
+export function seq<Parsers extends Parser<unknown>[]>(...parsers: Parsers): Parser<SeqParseResult<Parsers>> {
 	return new Parser((input, index, state) => {
 		let result;
 		let latestIndex = index;
@@ -149,17 +170,17 @@ export function seq(parsers: Parser<any>[], select?: number): Parser<any> {
 			latestIndex = result.index;
 			accum.push(result.value);
 		}
-		return success(latestIndex, (select != null ? accum[select] : accum));
+		return success(latestIndex, accum as SeqParseResult<Parsers>);
 	});
 }
 
-export function alt(parsers: Parser<any>[]): Parser<any> {
-	return new Parser((input, index, state) => {
-		let result;
+export function alt<Parsers extends Parser<unknown>[]>(parsers: Parsers): Parser<ParsedType<Parsers[number]>> {
+	return new Parser<ParsedType<Parsers[number]>>((input, index, state): Result<ParsedType<Parsers[number]>> => {
 		for (let i = 0; i < parsers.length; i++) {
-			result = parsers[i].handler(input, index, state);
+			const parser: Parsers[number] = parsers[i];
+			const result = parser.handler(input, index, state);
 			if (result.success) {
-				return result;
+				return result as Result<ParsedType<Parsers[number]>>;
 			}
 		}
 		return failure();
@@ -172,7 +193,7 @@ function succeeded<T>(value: T): Parser<T> {
 	});
 }
 
-export function notMatch(parser: Parser<any>): Parser<null> {
+export function notMatch(parser: Parser<unknown>): Parser<null> {
 	return new Parser((input, index, state) => {
 		const result = parser.handler(input, index, state);
 		return !result.success
@@ -232,12 +253,15 @@ export function lazy<T>(fn: () => Parser<T>): Parser<T> {
 //type SyntaxReturn<T> = T extends (rules: Record<string, Parser<any>>) => infer R ? R : never;
 //export function createLanguage2<T extends Record<string, Syntax<any>>>(syntaxes: T): { [K in keyof T]: SyntaxReturn<T[K]> } {
 
+type ParserTable<T> = { [K in keyof T]: Parser<T[K]> };
+
 // TODO: 関数の型宣言をいい感じにしたい
-export function createLanguage<T>(syntaxes: { [K in keyof T]: (r: Record<string, Parser<any>>) => T[K] }): T {
-	const rules: Record<string, Parser<any>> = {};
-	for (const key of Object.keys(syntaxes)) {
+export function createLanguage<T>(syntaxes: { [K in keyof T]: (r: ParserTable<T>) => Parser<T[K]> }): ParserTable<T> {
+	// @ts-expect-error initializing object so type error here
+	const rules: ParserTable<T> = {};
+	for (const key of Object.keys(syntaxes) as (keyof T & string)[]) {
 		rules[key] = lazy(() => {
-			const parser = (syntaxes as any)[key](rules);
+			const parser = syntaxes[key](rules);
 			if (parser == null) {
 				throw new Error('syntax must return a parser.');
 			}
@@ -245,5 +269,5 @@ export function createLanguage<T>(syntaxes: { [K in keyof T]: (r: Record<string,
 			return parser;
 		});
 	}
-	return rules as any;
+	return rules;
 }
