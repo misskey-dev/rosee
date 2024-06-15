@@ -144,12 +144,14 @@ export type MfmUrl = {
 	props: {
 		url: string;
 		brackets?: boolean;
+		silent?: boolean;
 	};
 	children?: [];
 };
-export const N_URL = (value: string, brackets?: boolean): NodeType<'url'> => {
+export const N_URL = (value: string, brackets?: boolean, silent?: boolean): NodeType<'url'> => {
 	const node: MfmUrl = { type: 'url', props: { url: value } };
 	if (brackets) node.props.brackets = brackets;
+	if (silent) node.props.silent = silent;
 	return node;
 };
 

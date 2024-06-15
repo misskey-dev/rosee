@@ -230,12 +230,13 @@ export type MfmUrl = {
     props: {
         url: string;
         brackets?: boolean;
+        silent?: boolean;
     };
     children?: [];
 };
 
 // @public (undocumented)
-export const N_URL: (value: string, brackets?: boolean) => NodeType<'url'>;
+export const N_URL: (value: string, brackets?: boolean, silent?: boolean) => NodeType<'url'>;
 
 // @public (undocumented)
 export type NodeType<T extends MfmNode['type']> = T extends 'quote' ? MfmQuote : T extends 'search' ? MfmSearch : T extends 'blockCode' ? MfmCodeBlock : T extends 'mathBlock' ? MfmMathBlock : T extends 'center' ? MfmCenter : T extends 'unicodeEmoji' ? MfmUnicodeEmoji : T extends 'emojiCode' ? MfmEmojiCode : T extends 'bold' ? MfmBold : T extends 'small' ? MfmSmall : T extends 'italic' ? MfmItalic : T extends 'strike' ? MfmStrike : T extends 'inlineCode' ? MfmInlineCode : T extends 'mathInline' ? MfmMathInline : T extends 'mention' ? MfmMention : T extends 'hashtag' ? MfmHashtag : T extends 'url' ? MfmUrl : T extends 'link' ? MfmLink : T extends 'fn' ? MfmFn : T extends 'plain' ? MfmPlain : T extends 'text' ? MfmText : never;
