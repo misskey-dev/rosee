@@ -421,8 +421,8 @@ export const language = P.createLanguage({
 	unicodeEmoji: r => {
 		const emoji = RegExp(twemojiRegex.source);
 		return P.regexp(emoji).map(content => {
-			// 異体字セレクタのみの場合は空文字として返す
-			return /^[\uFE00-\uFE0F]+$/u.test(content) ? M.TEXT('') : M.UNI_EMOJI(content);
+			// 異体字セレクタ(U+FE0F)の場合は文字として返す
+			return content == "\uFE0F" ? M.TEXT(content) : M.UNI_EMOJI(content);
 		});
 	},
 
