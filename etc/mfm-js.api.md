@@ -190,7 +190,7 @@ export type MfmSearch = {
 };
 
 // @public (undocumented)
-export type MfmSimpleNode = MfmUnicodeEmoji | MfmEmojiCode | MfmText;
+export type MfmSimpleNode = MfmUnicodeEmoji | MfmEmojiCode | MfmText | MfmPlain;
 
 // @public (undocumented)
 export type MfmSmall = {
