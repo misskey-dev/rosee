@@ -49,6 +49,12 @@ describe('SimpleParser', () => {
 			const output = [TEXT('あ'), EMOJI_CODE('bar'), TEXT('い')];
 			assert.deepStrictEqual(mfm.parseSimple(input), output);
 		});
+
+		test('Ignore Variation Selector preceded by Unicode Emoji', () => {
+			const input = '\uFE0F';
+			const output = [TEXT('')];
+			assert.deepStrictEqual(mfm.parseSimple(input), output);
+		})
 	});
 
 	test('disallow other syntaxes', () => {

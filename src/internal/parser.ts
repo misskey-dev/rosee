@@ -458,7 +458,10 @@ export const language = P.createLanguage<TypeTable>({
 
 	unicodeEmoji: () => {
 		const emoji = RegExp(twemojiRegex.source);
-		return P.regexp(emoji).map(content => M.UNI_EMOJI(content));
+		return P.regexp(emoji).map(content => {
+			// 異体字セレクタ(U+FE0F)の場合は文字として返す
+			return content === '\uFE0F' ? M.TEXT(content) : M.UNI_EMOJI(content);
+		});
 	},
 
 	plainTag: () => {
