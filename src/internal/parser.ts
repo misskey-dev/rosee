@@ -170,6 +170,7 @@ export const language = P.createLanguage<TypeTable>({
 		return P.alt([
 			r.unicodeEmoji, // Regexp
 			r.emojiCode, // ":"
+			r.plainTag, // "<plain>" // to NOT parse emojiCode inside `<plain>`
 			r.text,
 		]);
 	},
