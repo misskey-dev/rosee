@@ -204,7 +204,6 @@ after`;
 		test('nested', () => {
 			const nodes = mfm.parse('abc:hoge:$[tada 123 @hoge :foo:]:piyo:');
 			const expect = [
-				EMOJI_CODE('hoge'),
 				EMOJI_CODE('foo'),
 				EMOJI_CODE('piyo')
 			];

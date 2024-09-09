@@ -645,14 +645,13 @@ export const language = P.createLanguage<TypeTable>({
 	},
 
 	emojiCode: () => {
-		const side = P.notMatch(P.regexp(/[a-z0-9]/i));
 		const mark = P.str(':');
 		return P.seq( 
-			P.alt([P.lineBegin, side]),
+			P.notRegexpBefore(/[a-z0-9]$/i),
 			mark,
 			P.regexp(/[a-z0-9_+-]+/i),
 			mark,
-			P.alt([P.lineEnd, side]),
+			P.alt([P.lineEnd, P.notMatch(P.regexp(/[a-z0-9]/i))]),
 		).select(2).map(name => M.EMOJI_CODE(name));
 	},
 
