@@ -392,6 +392,7 @@ export const language = P.createLanguage<TypeTable>({
 	italicAsta: () => {
 		const mark = P.str('*');
 		const parser = P.seq(
+			P.notRegexpBefore(/[a-z0-9]$/i),
 			mark,
 			P.alt([alphaAndNum, space]).many(1),
 			mark,
@@ -401,18 +402,14 @@ export const language = P.createLanguage<TypeTable>({
 			if (!result.success) {
 				return P.failure();
 			}
-			// check before
-			const beforeStr = input.slice(0, index);
-			if (/[a-z0-9]$/i.test(beforeStr)) {
-				return P.failure();
-			}
-			return P.success(result.index, M.ITALIC(mergeText(result.value[1])));
+			return P.success(result.index, M.ITALIC(mergeText(result.value[2])));
 		});
 	},
 
 	italicUnder: () => {
 		const mark = P.str('_');
 		const parser = P.seq(
+			P.notRegexpBefore(/[a-z0-9]$/i),
 			mark,
 			P.alt([alphaAndNum, space]).many(1),
 			mark,
@@ -422,12 +419,7 @@ export const language = P.createLanguage<TypeTable>({
 			if (!result.success) {
 				return P.failure();
 			}
-			// check before
-			const beforeStr = input.slice(0, index);
-			if (/[a-z0-9]$/i.test(beforeStr)) {
-				return P.failure();
-			}
-			return P.success(result.index, M.ITALIC(mergeText(result.value[1])));
+			return P.success(result.index, M.ITALIC(mergeText(result.value[2])));
 		});
 	},
 
@@ -551,6 +543,7 @@ export const language = P.createLanguage<TypeTable>({
 	mention: () => {
 		const parser = P.seq(
 			notLinkLabel,
+			P.notRegexpBefore(/[a-z0-9]$/i),
 			P.str('@'),
 			P.regexp(/[a-z0-9_-]+/i),
 			P.seq(
@@ -564,15 +557,10 @@ export const language = P.createLanguage<TypeTable>({
 			if (!result.success) {
 				return P.failure();
 			}
-			// check before (not mention)
-			const beforeStr = input.slice(0, index);
-			if (/[a-z0-9]$/i.test(beforeStr)) {
-				return P.failure();
-			}
 			let invalidMention = false;
 			const resultIndex = result.index;
-			const username: string = result.value[2];
-			const hostname: string | null = result.value[3];
+			const username: string = result.value[3];
+			const hostname: string | null = result.value[4];
 			// remove [.-] of tail of hostname
 			let modifiedHost = hostname;
 			if (hostname != null) {
@@ -637,17 +625,13 @@ export const language = P.createLanguage<TypeTable>({
 		]));
 		const parser = P.seq( 
 			notLinkLabel,
+			P.notRegexpBefore(/[a-z0-9]$/i),
 			mark,
 			innerItem.many(1).text(),
-		).select(2);
+		).select(3);
 		return new P.Parser((input, index, state) => {
 			const result = parser.handler(input, index, state);
 			if (!result.success) {
-				return P.failure();
-			}
-			// check before
-			const beforeStr = input.slice(0, index);
-			if (/[a-z0-9]$/i.test(beforeStr)) {
 				return P.failure();
 			}
 			const resultIndex = result.index;
