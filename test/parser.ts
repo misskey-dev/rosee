@@ -49,6 +49,12 @@ describe('SimpleParser', () => {
 			const output = [TEXT('あ'), EMOJI_CODE('bar'), TEXT('い')];
 			assert.deepStrictEqual(mfm.parseSimple(input), output);
 		});
+
+		test('end of text', () => {
+			const input = 'At 10:30:';
+			const output = [TEXT('At 10:30:')];
+			assert.deepStrictEqual(mfm.parseSimple(input), output);
+		});
 	});
 
 	test('disallow other syntaxes', () => {

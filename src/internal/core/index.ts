@@ -202,6 +202,15 @@ export function notMatch(parser: Parser<unknown>): Parser<null> {
 	});
 }
 
+export function notRegexpBefore<T extends RegExp>(pattern: T): Parser<null> {
+	return new Parser((input, index, _state) => {
+		const beforeStr = input.slice(0, index);
+		return !pattern.test(beforeStr)
+			? success(index, null)
+			: failure();
+	});
+}
+
 export const cr = str('\r');
 export const lf = str('\n');
 export const crlf = str('\r\n');
