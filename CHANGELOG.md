@@ -6,6 +6,7 @@
 ### Improvements
 
 ### Changes
+- allow `.` in mentions (like `@bsky.brid.gy@bsky.brid.gy`)
 
 ### Bugfixes
 

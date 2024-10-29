@@ -552,7 +552,7 @@ export const language = P.createLanguage<TypeTable>({
 		const parser = P.seq(
 			notLinkLabel,
 			P.str('@'),
-			P.regexp(/[a-z0-9_-]+/i),
+			P.regexp(/[a-z0-9_.-]+/i),
 			P.seq(
 				P.str('@'),
 				P.regexp(/[a-z0-9_.-]+/i),
