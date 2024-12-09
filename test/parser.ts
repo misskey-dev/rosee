@@ -751,6 +751,18 @@ hoge`;
 			assert.deepStrictEqual(mfm.parse(input), output);
 		});
 
+		test('disallow "." in head of username', () => {
+			const input = '@.abc';
+			const output = [TEXT('@.abc')];
+			assert.deepStrictEqual(mfm.parse(input), output);
+		});
+
+		test('disallow "." in tail of username', () => {
+			const input = '@abc.';
+			const output = [MENTION('abc', null, '@abc'), TEXT('.')];
+			assert.deepStrictEqual(mfm.parse(input), output);
+		});
+
 		test('disallow "." in head of hostname', () => {
 			const input = '@abc@.aaa';
 			const output = [TEXT('@abc@.aaa')];
