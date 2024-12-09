@@ -552,7 +552,7 @@ export const language = P.createLanguage<TypeTable>({
 		const parser = P.seq(
 			notLinkLabel,
 			P.str('@'),
-			P.regexp(/[a-z0-9_-]+/i),
+			P.regexp(/[a-z0-9_.-]+/i),
 			P.seq(
 				P.str('@'),
 				P.regexp(/[a-z0-9_.-]+/i),
@@ -586,9 +586,9 @@ export const language = P.createLanguage<TypeTable>({
 					}
 				}
 			}
-			// remove "-" of tail of username
+			// remove [.-] of tail of username
 			let modifiedName = username;
-			result = /-+$/.exec(username);
+			result = /[.-]+$/.exec(username);
 			if (result != null) {
 				if (modifiedHost == null) {
 					modifiedName = username.slice(0, (-1 * result[0].length));
@@ -597,8 +597,8 @@ export const language = P.createLanguage<TypeTable>({
 					invalidMention = true;
 				}
 			}
-			// disallow "-" of head of username
-			if (modifiedName.length === 0 || modifiedName[0] === '-') {
+			// disallow [.-] of head of username
+			if (modifiedName.length === 0 || /^[.-]/.test(modifiedName)) {
 				invalidMention = true;
 			}
 			// disallow [.-] of head of hostname

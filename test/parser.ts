@@ -733,6 +733,12 @@ hoge`;
 			assert.deepStrictEqual(mfm.parse(input), output);
 		});
 
+		test('allow "." in username', () => {
+			const input = '@bsky.brid.gy@bsky.brid.gy';
+			const output = [MENTION('bsky.brid.gy', 'bsky.brid.gy', '@bsky.brid.gy@bsky.brid.gy')];
+			assert.deepStrictEqual(mfm.parse(input), output);
+		});
+
 		test('disallow "-" in head of username', () => {
 			const input = '@-abc';
 			const output = [TEXT('@-abc')];
@@ -742,6 +748,18 @@ hoge`;
 		test('disallow "-" in tail of username', () => {
 			const input = '@abc-';
 			const output = [MENTION('abc', null, '@abc'), TEXT('-')];
+			assert.deepStrictEqual(mfm.parse(input), output);
+		});
+
+		test('disallow "." in head of username', () => {
+			const input = '@.abc';
+			const output = [TEXT('@.abc')];
+			assert.deepStrictEqual(mfm.parse(input), output);
+		});
+
+		test('disallow "." in tail of username', () => {
+			const input = '@abc.';
+			const output = [MENTION('abc', null, '@abc'), TEXT('.')];
 			assert.deepStrictEqual(mfm.parse(input), output);
 		});
 
