@@ -1,12 +1,22 @@
-import { fullParser, simpleParser } from './internal';
+import { fullParser, simpleParser, htmlParser } from './internal';
 import { inspectOne, stringifyNode, stringifyTree } from './internal/util';
-import { MfmNode, MfmSimpleNode } from './node';
+import { MfmNode, MfmHtmlNode, MfmSimpleNode } from './node';
 
 /**
  * Generates a MfmNode tree from the MFM string.
 */
 export function parse(input: string, opts: Partial<{ nestLimit: number; }> = {}): MfmNode[] {
 	const nodes = fullParser(input, {
+		nestLimit: opts.nestLimit,
+	});
+	return nodes;
+}
+
+/**
+ * Generates a MfmHtmlNode tree from the MFM string.
+*/
+export function parseHtml(input: string, opts: Partial<{ nestLimit: number; }> = {}): MfmHtmlNode[] {
+	const nodes = htmlParser(input, {
 		nestLimit: opts.nestLimit,
 	});
 	return nodes;

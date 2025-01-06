@@ -31,6 +31,9 @@ https://github.com/syuilo/ai
 // Generate a MFM tree from the full MFM text.
 const mfmTree = mfm.parse(inputText);
 
+// Generate a MFM tree from the html MFM text.
+const htmlMfmTree = mfm.parseHtml(inputText);
+
 // Generate a MFM tree from the simple MFM text.
 const simpleMfmTree = mfm.parseSimple('I like the hot soup :soup:​');
 
@@ -60,6 +63,11 @@ npm run build
 full parser:
 ```
 npm run parse
+```
+
+html parser:
+```
+npm run parse-html
 ```
 
 simple parser:

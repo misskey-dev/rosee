@@ -1,5 +1,7 @@
 export type MfmNode = MfmBlock | MfmInline;
 
+export type MfmHtmlNode = MfmCenter | MfmInline;
+
 export type MfmSimpleNode = MfmUnicodeEmoji | MfmEmojiCode | MfmText | MfmPlain;
 
 export type MfmBlock = MfmQuote | MfmSearch | MfmCodeBlock | MfmMathBlock | MfmCenter;

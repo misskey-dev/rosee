@@ -1,5 +1,6 @@
 export {
 	parse,
+	parseHtml,
 	parseSimple,
 	toString,
 	inspect,
@@ -9,6 +10,7 @@ export {
 export {
 	NodeType,
 	MfmNode,
+	MfmHtmlNode,
 	MfmSimpleNode,
 	MfmBlock,
 	MfmInline,

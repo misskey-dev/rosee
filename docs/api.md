@@ -19,6 +19,27 @@ console.log(JSON.stringify(nodes));
 // => [{"type":"bold","children":[{"type":"text","props":{"text":"<s>cannot nest</s>"}}]}]
 ```
 
+## parseHtml API
+入力文字列からノードツリーを生成します。  
+MFM構文のうち、HTML、メンション、ハッシュタグ、URL、絵文字コード、Unicode絵文字を利用可能です。  
+
+例:  
+```ts
+const nodes = mfm.parseHtml('hello @syuilo');
+console.log(JSON.stringify(nodes));
+// => [{"type":"text","props":{"text":"hello "}},{"type":"mention","props":{"username":"syuilo","host":null,"acct":"@syuilo"}}]
+```
+
+### 最大のネストの深さを変更する
+デフォルトで20に設定されています。  
+
+例:  
+```ts
+const nodes = mfm.parseHtml('<b><s>cannot nest</s></b>', { nestLimit: 1 });
+console.log(JSON.stringify(nodes));
+// => [{"type":"bold","children":[{"type":"text","props":{"text":"<s>cannot nest</s>"}}]}]
+```
+
 ## parseSimple API
 入力文字列からノードツリーを生成します。  
 絵文字コードとUnicode絵文字を利用可能です。  

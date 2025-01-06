@@ -66,14 +66,18 @@ function nest<T>(parser: P.Parser<T>, fallback?: P.Parser<string>): P.Parser<T |
 
 interface TypeTable {
 	fullParser: (M.MfmNode | string)[],
+	htmlParser: (M.MfmHtmlNode | string)[],
 	simpleParser: (M.MfmSimpleNode | string)[],
 	full: M.MfmNode | string,
+	html: M.MfmHtmlNode | string,
 	simple: M.MfmSimpleNode | string,
 	inline: M.MfmInline | string,
+	inlineHtml: M.MfmInline | string,
 	quote: M.NodeType<'quote'>,
 	codeBlock: M.NodeType<'blockCode'>,
 	mathBlock: M.NodeType<'mathBlock'>,
 	centerTag: M.NodeType<'center'>,
+	centerHtmlTag: M.NodeType<'center'>,
 	big: M.NodeType<'fn'> | string,
 	boldAsta: M.NodeType<'bold'> | string,
 	boldTag: M.NodeType<'bold'> | string,
@@ -102,6 +106,10 @@ interface TypeTable {
 export const language = P.createLanguage<TypeTable>({
 	fullParser: r => {
 		return r.full.many(0);
+	},
+
+	htmlParser: r => {
+		return r.html.many(0);
 	},
 
 	simpleParser: r => {
@@ -223,6 +231,60 @@ export const language = P.createLanguage<TypeTable>({
 		]);
 	},
 
+	html: r => {
+		return P.alt([
+			// Regexp
+			r.unicodeEmoji,
+			// "<center>" block
+			r.centerHtmlTag,
+			// "<small>"
+			r.smallTag,
+			// "<plain>"
+			r.plainTag,
+			// "<b>"
+			r.boldTag,
+			// "<i>"
+			r.italicTag,
+			// "<s>"
+			r.strikeTag,
+			// "@"
+			r.mention,
+			// "#"
+			r.hashtag,
+			// ":"
+			r.emojiCode,
+			// http
+			r.url,
+			r.text,
+		]);
+	},
+
+	inlineHtml: r => {
+		return P.alt([
+			// Regexp
+			r.unicodeEmoji,
+			// "<small>"
+			r.smallTag,
+			// "<plain>"
+			r.plainTag,
+			// "<b>"
+			r.boldTag,
+			// "<i>"
+			r.italicTag,
+			// "<s>"
+			r.strikeTag,
+			// "@"
+			r.mention,
+			// "#"
+			r.hashtag,
+			// ":"
+			r.emojiCode,
+			// http
+			r.url,
+			r.text,
+		]);
+	},
+
 	quote: r => {
 		const lines: P.Parser<string[]> = P.seq( 
 			P.str('>'),
@@ -308,6 +370,24 @@ export const language = P.createLanguage<TypeTable>({
 			open,
 			newLine.option(),
 			P.seq(P.notMatch(P.seq(newLine.option(), close)), nest(r.inline)).select(1).many(1),
+			newLine.option(),
+			close,
+			P.lineEnd,
+			newLine.option(),
+		).map(result => {
+			return M.CENTER(mergeText(result[4]));
+		});
+	},
+
+	centerHtmlTag: r => {
+		const open = P.str('<center>');
+		const close = P.str('</center>');
+		return P.seq(
+			newLine.option(),
+			P.lineBegin,
+			open,
+			newLine.option(),
+			P.seq(P.notMatch(P.seq(newLine.option(), close)), nest(r.inlineHtml)).select(1).many(1),
 			newLine.option(),
 			close,
 			P.lineEnd,

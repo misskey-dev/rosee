@@ -9,6 +9,7 @@
     "tsc": "tsc",
     "tsd": "tsd",
     "parse": "node ./built/cli/parse",
+    "parse-html": "node ./built/cli/parseHtml",
     "parse-simple": "node ./built/cli/parseSimple",
     "api": "npx api-extractor run --local --verbose",
     "api-prod": "npx api-extractor run --verbose",

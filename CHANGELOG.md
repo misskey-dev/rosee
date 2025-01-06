@@ -11,6 +11,10 @@
 
 -->
 
+## Unreleased
+### Features
+- Add parseHtml
+
 ## 0.24.0
 ### Features
 - Supports Unicode 15.0 emoji

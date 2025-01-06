@@ -105,6 +105,9 @@ export type MfmHashtag = {
 };
 
 // @public (undocumented)
+export type MfmHtmlNode = MfmCenter | MfmInline;
+
+// @public (undocumented)
 export type MfmInline = MfmUnicodeEmoji | MfmEmojiCode | MfmBold | MfmSmall | MfmItalic | MfmStrike | MfmInlineCode | MfmMathInline | MfmMention | MfmHashtag | MfmUrl | MfmLink | MfmFn | MfmPlain | MfmText;
 
 // @public (undocumented)
@@ -244,6 +247,11 @@ export type NodeType<T extends MfmNode['type']> = T extends 'quote' ? MfmQuote :
 export function parse(input: string, opts?: Partial<{
     nestLimit: number;
 }>): MfmNode[];
+
+// @public (undocumented)
+export function parseHtml(input: string, opts?: Partial<{
+    nestLimit: number;
+}>): MfmHtmlNode[];
 
 // @public (undocumented)
 export function parseSimple(input: string): MfmSimpleNode[];
